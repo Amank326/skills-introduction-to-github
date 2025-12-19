@@ -69,7 +69,7 @@ class QuantumTravelAI {
     }
 
     generateClientId() {
-        return 'client_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        return 'client_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
     }
 
     connectWebSocket() {

@@ -70,3 +70,6 @@ echo "Press Ctrl+C to stop the server"
 echo ""
 
 python main.py
+
+# Alternative: Use uvicorn directly for better production management
+# uvicorn main:app --host 0.0.0.0 --port 8000

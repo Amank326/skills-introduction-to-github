@@ -12,7 +12,7 @@ from typing import List, Optional, Dict, Any
 import json
 import asyncio
 import uvicorn
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import os
 from pathlib import Path
@@ -33,7 +33,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["*"],  # TODO: Configure appropriately for production - use specific domains
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -271,7 +271,7 @@ async def health_check():
         "status": "healthy",
         "service": "Quantum Travel AI",
         "version": "1.0.0",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "active_connections": len(manager.active_connections)
     }
 
@@ -285,7 +285,7 @@ async def chat(request: ChatRequest):
     """Process chat message and return AI response"""
     try:
         # Generate conversation ID if not provided
-        conversation_id = request.conversation_id or f"conv_{datetime.utcnow().timestamp()}"
+        conversation_id = request.conversation_id or f"conv_{datetime.now(timezone.utc).timestamp()}"
         
         # Get or create conversation history
         if conversation_id not in conversation_history:
@@ -295,7 +295,7 @@ async def chat(request: ChatRequest):
         user_message = {
             "role": "user",
             "content": request.message,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         conversation_history[conversation_id].append(user_message)
         
@@ -310,7 +310,7 @@ async def chat(request: ChatRequest):
         assistant_message = {
             "role": "assistant",
             "content": ai_response,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         conversation_history[conversation_id].append(assistant_message)
         
@@ -318,7 +318,7 @@ async def chat(request: ChatRequest):
             response=ai_response,
             conversation_id=conversation_id,
             model=request.model,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             tokens_used=len(request.message.split()) + len(ai_response.split())
         )
     
@@ -348,7 +348,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 "type": "connection",
                 "message": "Connected to Quantum Travel AI",
                 "client_id": client_id,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }),
             client_id
         )
@@ -371,7 +371,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                     "type": "message",
                     "message": ai_response,
                     "model": model,
-                    "timestamp": datetime.utcnow().isoformat()
+                    "timestamp": datetime.now(timezone.utc).isoformat()
                 }),
                 client_id
             )
@@ -393,7 +393,7 @@ async def upload_file(file: UploadFile = File(...)):
             "size": len(content),
             "content_type": file.content_type,
             "message": "File uploaded successfully. Processing capability coming soon!",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
