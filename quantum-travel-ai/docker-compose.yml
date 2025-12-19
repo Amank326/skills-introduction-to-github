@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  quantum-ai:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: quantum-travel-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DEBUG=${DEBUG:-False}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+    volumes:
+      - ./backend:/app
+      - ./frontend:/app/frontend
+    restart: unless-stopped
+    networks:
+      - quantum-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: quantum-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - quantum-network
+    command: redis-server --appendonly yes
+
+  # Optional: PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: quantum-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-quantum}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-quantum123}
+      - POSTGRES_DB=${POSTGRES_DB:-quantumdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - quantum-network
+
+networks:
+  quantum-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  postgres-data:
